@@ -26,7 +26,7 @@ def generate_claude_response_with_retry(prompt: str, max_tokens: int = 2000) -> 
     return generate_claude_response(prompt, max_tokens)
 
 def generate_sector_info(sector: str) -> dict:
-    prompt = f"""Provide a summary of the {sector} sector and list 5 sub-sectors with brief descriptions."""
+    prompt = f"""Provide a summary of the {sector} sector and list 5 sub-sectors with brief descriptions"""
     response = generate_claude_response(prompt)
 
     # Parse the response to extract summary and sub-sectors
