@@ -1,0 +1,50 @@
+
+
+
+
+
+DeepTech Startup Deal Sourcing Tool
+Sector Selector
+Artificial Intelligence Overview
+The Artificial Intelligence (AI) sector focuses on developing technologies that enable machines to perform tasks that typically require human intelligence, such as visual perception, speech recognition, decision-making, and language translation. AI has the potential to revolutionize various industries and improve efficiency, productivity, and innovation. The sector has grown significantly in recent years, attracting substantial investments and research efforts.
+
+Sub-sectors
+Five sub-sectors of Artificial Intelligence with brief descriptions:
+
+1. Machine Learning (ML): ML involves the development of algorithms and statistical models that enable computer systems to learn and improve their performance on a specific task without being explicitly programmed. ML algorithms can be supervised, unsupervised, or semi-supervised, depending on the type of data and learning approach used.
+
+2. Natural Language Processing (NLP): NLP focuses on the interaction between computers and human language. It involves developing algorithms and models that enable machines to understand, interpret, and generate human language. Applications of NLP include sentiment analysis, text classification, machine translation, and chatbots.
+
+3. Computer Vision: Computer Vision deals with enabling computers to interpret and understand visual information from the world, such as images and videos. It involves developing algorithms and models for tasks such as object recognition, image classification, facial recognition, and scene understanding. Applications include autonomous vehicles, surveillance systems, and medical image analysis.
+
+4. Robotics: Robotics involves the design, construction, and operation of robots, which are machines capable of carrying out a complex series of actions automatically. AI is used in robotics to enable robots to perceive their environment, make decisions, and perform tasks autonomously. Applications include industrial automation, healthcare robotics, and service robots.
+
+5. Explainable AI (XAI): XAI focuses on developing AI systems that can provide understandable and interpretable explanations for their decisions and actions. This is important for building trust in AI systems, ensuring fairness and transparency, and enabling humans to understand and validate the reasoning behind AI-generated outputs. XAI is crucial in domains such as healthcare, finance, and legal systems, where the consequences of AI decisions can be significant.
+
+Choose a sub-sector:
+
+3. Computer Vision
+Please select an option:
+
+
+
+Startup Finder
+Startups in Artificial Intelligence - 3. Computer Vision
+Clarifai
+
+KeyError: 'technology'
+Traceback:
+File "/home/runner/DeepTechDealNavigator/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/DeepTechDealNavigator/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 590, in code_to_exec
+    exec(code, module.__dict__)
+File "/home/runner/DeepTechDealNavigator/main.py", line 35, in <module>
+    main()
+File "/home/runner/DeepTechDealNavigator/main.py", line 22, in main
+    sector_selector.run(conn)
+File "/home/runner/DeepTechDealNavigator/stages/sector_selector.py", line 53, in run
+    startup_finder.run(conn)
+File "/home/runner/DeepTechDealNavigator/stages/startup_finder.py", line 20, in run
+    st.write(f"Technology: {startup['technology']}")
+                            ~~~~~~~^^^^^^^^^^^^^^

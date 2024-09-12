@@ -1,0 +1,79 @@
+It looks like your Streamlit app is not transitioning to the "Deal Sourcer" stage after the "Tech Risk Assessor" stage is completed. Here are some potential issues and solutions:
+
+### Problem Breakdown:
+1. **State Transition Handling:**
+   The `deal_sourcer.run()` function is not being executed when the "Proceed to Deal Sourcer" button is pressed.
+   
+2. **State Persistence:**
+   You need to ensure that `st.session_state` is correctly storing and passing data (such as `analyzed_startups` and `risk_assessments`) between stages.
+
+3. **Stage Control Logic:**
+   There may be issues in handling the `current_stage` within `st.session_state`, which manages transitions.
+
+### Possible Issues and Fixes:
+
+1. **Ensure Session State is Set Correctly for Stage Transitions:**
+   When the user clicks the "Proceed to Deal Sourcer" button, you need to make sure that the `st.session_state.current_stage` is properly updated and that the `deal_sourcer.run()` function is called with the required arguments.
+
+   **Fix:**
+   Add a condition in the main code to check the current stage and handle the transitions explicitly:
+
+   ```python
+   def main():
+       # Check the current stage and route accordingly
+       if "current_stage" not in st.session_state:
+           st.session_state.current_stage = "Startup Finder"
+
+       if st.session_state.current_stage == "Tech Risk Assessor":
+           run_tech_risk_assessor()
+       elif st.session_state.current_stage == "Deal Sourcer":
+           run_deal_sourcer()
+       else:
+           run_startup_finder()
+   ```
+
+   Then, modify the `run()` function of the Tech Risk Assessor like this:
+
+   ```python
+   if st.button("Proceed to Deal Sourcer"):
+       logging.info("Proceeding to Deal Sourcer")
+       st.session_state.current_stage = "Deal Sourcer"
+       st.experimental_rerun()  # Force the app to re-run and transition to the Deal Sourcer stage
+   ```
+
+2. **Make Sure Data is Passed Between Stages Correctly:**
+   Ensure that the data, like `analyzed_startups` and `risk_assessments`, is correctly stored in `st.session_state` and retrieved when transitioning stages.
+
+   In your `run_deal_sourcer()` function, make sure you are accessing the session data properly:
+
+   ```python
+   def run_deal_sourcer():
+       if "risk_assessments" not in st.session_state:
+           st.warning("Please complete the Tech Risk Assessor stage first.")
+           return
+
+       # Now you can access st.session_state.risk_assessments and analyzed_startups
+       curated_startups = st.session_state.analyzed_startups
+       logging.info(f"Curated startups: {curated_startups}")
+       logging.info(f"Risk assessments: {st.session_state.risk_assessments}")
+       ...
+   ```
+
+3. **Button Actions and Stage Persistence:**
+   Streamlit works in a stateless way, so when the user clicks a button, it doesn't persist actions unless explicitly told to. The `st.experimental_rerun()` function helps force a re-run, ensuring the next stage starts.
+
+4. **Ensure Proper Import and Function Calls:**
+   When you switch between stages, make sure that `deal_sourcer.run()` is being imported and executed properly:
+
+   ```python
+   from stages import deal_sourcer  # Make sure it's correctly imported
+
+   def run_tech_risk_assessor():
+       ...
+       if st.button("Proceed to Deal Sourcer"):
+           logging.info("Proceeding to Deal Sourcer")
+           st.session_state.current_stage = "Deal Sourcer"
+           st.experimental_rerun()
+   ```
+
+By ensuring that each stage's data is stored in `st.session_state` and correctly updating the `current_stage`, the transition to the "Deal Sourcer" stage should happen seamlessly after the "Tech Risk Assessor" stage is completed. The use of `st.experimental_rerun()` ensures that the app refreshes and re-runs after each transition.
