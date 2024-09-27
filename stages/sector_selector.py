@@ -70,7 +70,7 @@ def run(conn):
             sector_info = st.session_state.sector_info
             if sector_info:
                 st.write(sector_info['summary'])
-                st.subheader("Sub-sectors")
+                st.subheader("Here are the five important sub-sectors:")
                 for sub_sector, description in sector_info['sub_sectors'].items():
                     with st.expander(f"{sub_sector}"):
                         st.write(description)
