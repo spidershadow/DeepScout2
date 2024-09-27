@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def generate_claude_response(prompt: str, max_tokens: int = 4000) -> str:
     try:
         response = anthropic.messages.create(
-            model="claude-3-sonnet-20240229",
+            model="claude-3-5-sonnet-20240620",
             max_tokens=max_tokens,
             messages=[
                 {"role": "user", "content": prompt}

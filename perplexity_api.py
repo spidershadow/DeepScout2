@@ -27,7 +27,7 @@ def generate_startup_list(sector: str, sub_sector: str, num_startups: int = 5) -
     prompt = f"""Search for {num_startups} startups in the {sector} sector focusing on lesser-known companies that are gaining traction, specifically in the {sub_sector} sub-sector. For each startup, provide the following information: name, description, funding amount (if available), and key technology. Format the response as a JSON array of startup objects, each containing 'name', 'description', 'funding', and 'technology' fields."""
 
     payload = {
-        "model": "llama-3.1-sonar-large-128k-online",
+        "model": "llama-3.1-sonar-huge-128k-online",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 4000
     }
