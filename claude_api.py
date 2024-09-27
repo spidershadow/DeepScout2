@@ -31,7 +31,12 @@ def generate_claude_response_with_retry(prompt: str, max_tokens: int = 2000) -> 
     return generate_claude_response(prompt, max_tokens)
 
 def assess_tech_risk(startup_info_json: str):
-    startup_info = json.loads(startup_info_json)
+    try:
+        startup_info = json.loads(startup_info_json)
+    except json.JSONDecodeError as e:
+        logging.error(f"Error decoding startup info JSON: {e}")
+        return "Error: Invalid startup information format. Please provide valid JSON."
+
     startup_name = startup_info.get('name', 'Unknown Startup')
     startup_description = startup_info.get('description', 'No description available')
     startup_technology = startup_info.get('technology', 'No technology information available')
@@ -68,7 +73,11 @@ Confidence: [Low/Medium/High]
 
 Note: If information is not available for any category, use "Unknown" for the risk level and "Insufficient information" for the explanation.
 '''
-    response = generate_claude_response_with_retry(prompt)
+    try:
+        response = generate_claude_response_with_retry(prompt)
+    except Exception as e:
+        logging.error(f"Error generating risk assessment for {startup_name}: {e}")
+        return f"Error: Unable to generate risk assessment for {startup_name}. Please try again later."
 
     try:
         # Parse the response
@@ -79,13 +88,19 @@ Note: If information is not available for any category, use "Unknown" for the ri
         for line in lines:
             line = line.strip()
             if line.startswith(('1.', '2.', '3.', '4.', '5.')):
-                current_category = line.split(':')[0].split('.')[1].strip()
-                risk_level = line.split(':')[1].strip()
-                parsed_response[current_category] = {"risk": risk_level}
+                parts = line.split(':', 1)
+                if len(parts) == 2:
+                    current_category = parts[0].split('.')[1].strip()
+                    risk_level = parts[1].strip()
+                    parsed_response[current_category] = {"risk": risk_level}
             elif line.startswith('Explanation:'):
-                parsed_response[current_category]["explanation"] = line.split(':', 1)[1].strip()
+                if current_category:
+                    parsed_response[current_category]["explanation"] = line.split(':', 1)[1].strip()
             elif line.startswith('Overall Risk Score:'):
-                parsed_response["Overall Risk Score"] = float(line.split(':')[1].strip())
+                try:
+                    parsed_response["Overall Risk Score"] = float(line.split(':')[1].strip())
+                except ValueError:
+                    parsed_response["Overall Risk Score"] = "Unable to parse"
             elif line.startswith('Summary:'):
                 parsed_response["Summary"] = line.split(':', 1)[1].strip()
             elif line.startswith('Confidence:'):
@@ -94,12 +109,16 @@ Note: If information is not available for any category, use "Unknown" for the ri
         # Construct the formatted response
         formatted_response = f"Technology Risk Assessment for {startup_name}:\n\n"
         for category in ["Technology Novelty", "Development Stage", "Market Potential", "Competition", "Regulatory Risk"]:
-            formatted_response += f"{category}: {parsed_response[category]['risk']}\n"
-            formatted_response += f"Explanation: {parsed_response[category]['explanation']}\n\n"
+            if category in parsed_response:
+                formatted_response += f"{category}: {parsed_response[category]['risk']}\n"
+                formatted_response += f"Explanation: {parsed_response[category].get('explanation', 'No explanation provided')}\n\n"
+            else:
+                formatted_response += f"{category}: Unknown\n"
+                formatted_response += f"Explanation: Information not provided\n\n"
 
-        formatted_response += f"Overall Risk Score: {parsed_response['Overall Risk Score']}\n\n"
-        formatted_response += f"Summary: {parsed_response['Summary']}\n\n"
-        formatted_response += f"Confidence: {parsed_response['Confidence']}"
+        formatted_response += f"Overall Risk Score: {parsed_response.get('Overall Risk Score', 'Unable to calculate')}\n\n"
+        formatted_response += f"Summary: {parsed_response.get('Summary', 'No summary provided')}\n\n"
+        formatted_response += f"Confidence: {parsed_response.get('Confidence', 'Unknown')}"
 
         return formatted_response
 
