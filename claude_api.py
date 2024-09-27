@@ -127,21 +127,35 @@ Note: If information is not available for any category, use "Unknown" for the ri
         return f"Error: Unable to generate a valid risk assessment for {startup_name}. Please check the API response format."
 
 def generate_sector_info(sector: str) -> dict:
-    prompt = f"Provide a summary of the {sector} sector, provide the latest sector trends relevant to startup opportunites and list 5 sub-sectors with brief descriptions."
+    prompt = f'''Provide information about the {sector} sector in the following format:
+    Summary: [A brief summary of the sector]
+    Trends: [Latest trends relevant to startup opportunities]
+    Sub-sectors:
+    1. [Sub-sector name]: [Brief description]
+    2. [Sub-sector name]: [Brief description]
+    3. [Sub-sector name]: [Brief description]
+    4. [Sub-sector name]: [Brief description]
+    5. [Sub-sector name]: [Brief description]
+    '''
     response = generate_claude_response(prompt)
     
-    # Parse the response to extract summary and sub-sectors
-    lines = response.split('\n')
-    summary = lines[0].strip()
-    sub_sectors = {}
+    # Parse the response
+    parts = response.split('Sub-sectors:')
+    main_info = parts[0].strip().split('Trends:')
+    summary = main_info[0].replace('Summary:', '').strip()
+    trends = main_info[1].strip() if len(main_info) > 1 else ''
     
-    for line in lines[1:]:
-        if ':' in line:
-            sub_sector, description = line.split(':', 1)
-            sub_sectors[sub_sector.strip()] = description.strip()
+    sub_sectors = {}
+    if len(parts) > 1:
+        sub_sector_lines = parts[1].strip().split('\n')
+        for line in sub_sector_lines:
+            if ':' in line:
+                name, description = line.split(':', 1)
+                sub_sectors[name.strip()] = description.strip()
     
     return {
         'summary': summary,
+        'trends': trends,
         'sub_sectors': sub_sectors
     }
 
