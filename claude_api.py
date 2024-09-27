@@ -1,16 +1,21 @@
 import os
 from anthropic import Anthropic
 from tenacity import retry, stop_after_attempt, wait_exponential
+import json
+import logging
 
 CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY")
 if not CLAUDE_API_KEY:
     raise ValueError("CLAUDE_API_KEY environment variable is not set")
+
 anthropic = Anthropic(api_key=CLAUDE_API_KEY)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def generate_claude_response(prompt: str, max_tokens: int = 4000) -> str:
     try:
         response = anthropic.messages.create(
-            model="claude-3-5-sonnet-20240620",
+            model="claude-3-sonnet-20240229",
             max_tokens=max_tokens,
             messages=[
                 {"role": "user", "content": prompt}
@@ -18,27 +23,104 @@ def generate_claude_response(prompt: str, max_tokens: int = 4000) -> str:
         )
         return response.content[0].text
     except Exception as e:
-        print(f"Error generating Claude response: {e}")
+        logging.error(f"Error generating Claude response: {e}")
         return "I apologize, but I'm having trouble generating a response at the moment. Please try again later."
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def generate_claude_response_with_retry(prompt: str, max_tokens: int = 2000) -> str:
     return generate_claude_response(prompt, max_tokens)
 
-def generate_sector_info(sector: str) -> dict:
-    prompt = f"""Provide a summary of the {sector} sector and list 5 sub-sectors with brief descriptions"""
-    response = generate_claude_response(prompt)
+def assess_tech_risk(startup_info_json: str):
+    startup_info = json.loads(startup_info_json)
+    startup_name = startup_info.get('name', 'Unknown Startup')
+    startup_description = startup_info.get('description', 'No description available')
+    startup_technology = startup_info.get('technology', 'No technology information available')
 
+    prompt = f'''
+Based on the following startup information, assess the technological risk:
+
+Startup Name: {startup_name}
+Description: {startup_description}
+Technology: {startup_technology}
+
+Provide your assessment in the following strict format:
+
+1. Technology Novelty: [Low/Medium/High]
+Explanation: [1 sentence explanation]
+
+2. Development Stage: [Early/Mid/Late]
+Explanation: [1 sentence explanation]
+
+3. Market Potential: [Low/Medium/High]
+Explanation: [1 sentence explanation]
+
+4. Competition: [Low/Medium/High]
+Explanation: [1 sentence explanation]
+
+5. Regulatory Risk: [Low/Medium/High]
+Explanation: [1 sentence explanation]
+
+Overall Risk Score: [1-10]
+
+Summary: [2-3 sentence summary of key risk factors]
+
+Confidence: [Low/Medium/High]
+
+Note: If information is not available for any category, use "Unknown" for the risk level and "Insufficient information" for the explanation.
+'''
+    response = generate_claude_response_with_retry(prompt)
+
+    try:
+        # Parse the response
+        lines = response.split('\n')
+        parsed_response = {}
+        current_category = ""
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith(('1.', '2.', '3.', '4.', '5.')):
+                current_category = line.split(':')[0].split('.')[1].strip()
+                risk_level = line.split(':')[1].strip()
+                parsed_response[current_category] = {"risk": risk_level}
+            elif line.startswith('Explanation:'):
+                parsed_response[current_category]["explanation"] = line.split(':', 1)[1].strip()
+            elif line.startswith('Overall Risk Score:'):
+                parsed_response["Overall Risk Score"] = float(line.split(':')[1].strip())
+            elif line.startswith('Summary:'):
+                parsed_response["Summary"] = line.split(':', 1)[1].strip()
+            elif line.startswith('Confidence:'):
+                parsed_response["Confidence"] = line.split(':')[1].strip()
+
+        # Construct the formatted response
+        formatted_response = f"Technology Risk Assessment for {startup_name}:\n\n"
+        for category in ["Technology Novelty", "Development Stage", "Market Potential", "Competition", "Regulatory Risk"]:
+            formatted_response += f"{category}: {parsed_response[category]['risk']}\n"
+            formatted_response += f"Explanation: {parsed_response[category]['explanation']}\n\n"
+
+        formatted_response += f"Overall Risk Score: {parsed_response['Overall Risk Score']}\n\n"
+        formatted_response += f"Summary: {parsed_response['Summary']}\n\n"
+        formatted_response += f"Confidence: {parsed_response['Confidence']}"
+
+        return formatted_response
+
+    except Exception as e:
+        logging.error(f"Error parsing risk assessment response for {startup_name}: {e}")
+        return f"Error: Unable to generate a valid risk assessment for {startup_name}. Please check the API response format."
+
+def generate_sector_info(sector: str) -> dict:
+    prompt = f"Provide a summary of the {sector} sector and list 5 sub-sectors with brief descriptions."
+    response = generate_claude_response(prompt)
+    
     # Parse the response to extract summary and sub-sectors
     lines = response.split('\n')
     summary = lines[0].strip()
     sub_sectors = {}
-
+    
     for line in lines[1:]:
         if ':' in line:
             sub_sector, description = line.split(':', 1)
             sub_sectors[sub_sector.strip()] = description.strip()
-
+    
     return {
         'summary': summary,
         'sub_sectors': sub_sectors
@@ -52,70 +134,16 @@ def analyze_startup(startup_info):
     prompt = f"Analyze the following startup and provide a brief summary of its potential and risks:\n\n{startup_info}"
     return generate_claude_response(prompt)
 
-def assess_tech_risk(startup_info):
-    prompt = f'''
-    Based on the following startup information, assess the technological risk:
-
-    Startup Information:
-    {startup_info}
-
-    Provide a risk score as a single number from 1 to 10 (1 being lowest risk, 10 being highest risk), followed by a brief explanation.
-    Format your response as follows:
-    <score>
-    <explanation>
-    '''
-    response = generate_claude_response(prompt)
-    
-    try:
-        lines = response.strip().split('\n', 1)
-        risk_score = int(lines[0])
-        explanation = lines[1] if len(lines) > 1 else ""
-        return f"{risk_score}\n{explanation}"
-    except ValueError:
-        print(f"Error parsing risk score from response: {response}")
-        return "0\nError: Unable to generate a valid risk score."
-
 def generate_deal_summary(startup_info, risk_assessment):
     prompt = f"""
-    Create a concise deal summary for the following startup, including its potential and risk assessment:
+Create a concise deal summary for the following startup, including its potential and risk assessment:
 
-    Startup Information:
-    {startup_info}
+Startup Information:
+{startup_info}
 
-    Risk Assessment:
-    {risk_assessment}
+Risk Assessment:
+{risk_assessment}
 
-    Provide a summary in 3-4 sentences, highlighting key points for a GP to consider.
-    """
+Provide a summary in 3-4 sentences, highlighting key points for a GP to consider.
+"""
     return generate_claude_response(prompt)
-
-def generate_startup_list(sector: str, sub_sector: str, num_startups: int = 5) -> list:
-    print(f"Generating startup list for {sector} - {sub_sector}")
-    prompt = f"Search for {num_startups} real-world startups in the {sector} sector, specifically in the {sub_sector} sub-sector. For each startup, provide the following information: name, description, funding amount (if available), and key technology. Format the response as a Python list of dictionaries, with each dictionary representing a startup."
-
-    try:
-        response = generate_claude_response_with_retry(prompt)
-        print(f"Raw API response:\n{response}")
-
-        # Remove any leading or trailing whitespace and newlines
-        response = response.strip()
-
-        # Remove any text before the start of the list
-        start_index = response.find("[")
-        if start_index != -1:
-            response = response[start_index:]
-
-        # Remove any text after the end of the list
-        end_index = response.rfind("]")
-        if end_index != -1:
-            response = response[:end_index+1]
-
-        startup_list = eval(response)
-        if not isinstance(startup_list, list) or not all(isinstance(item, dict) for item in startup_list):
-            raise ValueError("Invalid response format")
-        print(f"Parsed startup list: {startup_list}")
-        return startup_list
-    except Exception as e:
-        print(f"Error generating or parsing startup list: {e}")
-        print(f"Problematic response: {response}")
-        return []

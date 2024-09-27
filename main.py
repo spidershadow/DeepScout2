@@ -8,8 +8,8 @@ logging.basicConfig(level=logging.INFO)
 
 def main():
     try:
-        st.set_page_config(page_title="DeepTech Startup Deal Sourcing Tool", layout="wide")
-        st.title("DeepTech Startup Deal Sourcing Tool")
+        st.set_page_config(page_title="DeepScout", layout="wide")
+        st.title("DeepScout")
 
         # Initialize database connection
         conn = init_connection()

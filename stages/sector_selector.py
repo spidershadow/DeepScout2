@@ -1,18 +1,40 @@
 import streamlit as st
-from claude_api import generate_claude_response, generate_sector_info
-from stages import startup_finder
+from claude_api import generate_sector_info
 import logging
+from stages import startup_finder
 
 logging.basicConfig(level=logging.INFO)
 
-def run(conn):
-    st.header("Sector Selector")
-    sectors = ["Artificial Intelligence", "Quantum Computing", "Biotechnology", "Renewable Energy", "Nanotechnology"]
-
+def initialize_session_state():
+    if 'current_stage' not in st.session_state:
+        st.session_state.current_stage = 'Sector Selector'
+    if 'progress' not in st.session_state:
+        st.session_state.progress = 0.33
     if 'sector_selected' not in st.session_state:
         st.session_state.sector_selected = False
     if 'sector_info' not in st.session_state:
         st.session_state.sector_info = None
+    if 'show_startup_finder' not in st.session_state:
+        st.session_state.show_startup_finder = False
+    if 'selected_sector' not in st.session_state:
+        st.session_state.selected_sector = None
+    if 'selected_sub_sector' not in st.session_state:
+        st.session_state.selected_sub_sector = None
+
+def reset_sector_selector():
+    st.session_state.sector_selected = False
+    st.session_state.sector_info = None
+    st.session_state.show_startup_finder = False
+    st.session_state.selected_sector = None
+    st.session_state.selected_sub_sector = None
+    st.session_state.current_stage = 'Sector Selector'
+    st.session_state.progress = 0.33
+
+def run(conn):
+    initialize_session_state()
+
+    st.header("Sector Selector")
+    sectors = ["Artificial Intelligence", "Quantum Computing", "Biotechnology", "Renewable Energy", "Nanotechnology"]
 
     if not st.session_state.sector_selected:
         selected_sector = st.selectbox("Choose a deeptech sector:", sectors)
@@ -27,13 +49,11 @@ def run(conn):
                 except Exception as e:
                     logging.error(f"Error generating sector information: {str(e)}")
                     st.error("An error occurred while generating sector information. Please try again.")
-                    st.session_state.sector_selected = False
-                    st.session_state.sector_info = None
+                    reset_sector_selector()
             st.rerun()
 
     if st.session_state.sector_selected:
         st.subheader(f"{st.session_state.selected_sector} Overview")
-
         sector_info = st.session_state.sector_info
         if sector_info:
             st.write(sector_info['summary'])
@@ -44,26 +64,22 @@ def run(conn):
 
             selected_sub_sector = st.selectbox("Choose a sub-sector:", list(sector_info['sub_sectors'].keys()), key="sub_sector_select")
 
-            st.write("Please select an option:")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Go back to Sector Selection"):
-                    st.session_state.sector_selected = False
-                    st.session_state.sector_info = None
-                    st.rerun()
-            with col2:
-                if st.button("Proceed to Startup Selection"):
-                    logging.info("Proceed to Startup Selection button clicked")
-                    st.session_state.selected_sub_sector = selected_sub_sector
-                    st.session_state.current_stage = "Startup Finder"
-                    st.session_state.progress = 0.5
-                    st.success(f"You have selected the {st.session_state.selected_sector} sector and the {selected_sub_sector} sub-sector.")
-                    st.info("Proceeding to Startup Selection...")
-                    st.rerun()
+            if st.button("Find Startups"):
+                st.session_state.selected_sub_sector = selected_sub_sector
+                st.session_state.show_startup_finder = True
+                st.session_state.current_stage = "Startup Finder"
+                st.session_state.progress = 0.66
+                st.success(f"You have selected the {st.session_state.selected_sector} sector and the {selected_sub_sector} sub-sector.")
+                st.info("Finding startups...")
         else:
             st.error("No sector information available. Please go back and select a sector again.")
+            reset_sector_selector()
 
-    if st.session_state.current_stage == "Startup Finder":
-        logging.info("Redirecting to Startup Finder")
+        if st.button("Go back to Sector Selection"):
+            reset_sector_selector()
+            st.rerun()
+
+    if st.session_state.show_startup_finder:
         startup_finder.run(conn)
-        return
+
+    logging.info(f"Current session state: {st.session_state}")

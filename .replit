@@ -44,6 +44,7 @@ args = "pip show streamlit && echo '---' && streamlit hello --server.headless tr
 
 [deployment]
 run = ["sh", "-c", "streamlit run main.py --server.port 5000"]
+deploymentTarget = "cloudrun"
 
 [[ports]]
 localPort = 5000
