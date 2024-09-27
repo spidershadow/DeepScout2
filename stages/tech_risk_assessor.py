@@ -32,34 +32,32 @@ def parse_risk_score(risk_assessment):
 
 def generate_gp_summary_and_next_steps(summary_data, avg_risk_score):
     prompt = f"""
-As an AI assistant to a Venture Capital firm, provide a detailed summary and next steps for the General Partners based on the following tech risk assessment data:
+As an AI assistant to a Venture Capital firm, analyze the following tech risk assessment data and provide actionable insights for the General Partners:
 
-Summary of assessed startups:
+```json
 {json.dumps(summary_data, indent=2)}
+```
 
 Average Risk Score: {avg_risk_score:.2f}
 
-Please provide:
-1. A concise summary of the overall tech risk landscape for these startups (2-3 sentences)
-2. Key insights or patterns observed across the assessed startups (3-4 bullet points)
-3. Recommended next steps for the General Partners (4-5 bullet points)
+1. Executive Summary (2-3 sentences):
+   Concisely outline the overall tech risk landscape, highlighting any critical concerns or opportunities.
 
-Format your response as follows:
+2. Key Insights (3 bullet points):
+   • [Most significant pattern or trend]
+   • [Highest potential risk or area of concern]
+   • [Most promising opportunity or strength]
 
-Summary:
-[Your summary here]
+3. Strategic Recommendations (3-4 bullet points):
+   • [Immediate action item to address highest risk]
+   • [Suggestion to capitalize on identified opportunity]
+   • [Recommendation for portfolio balancing or risk mitigation]
+   • [Proposed follow-up or due diligence focus]
 
-Key Insights:
-• [Insight 1]
-• [Insight 2]
-• [Insight 3]
+4. Potential Impact on Returns (1-2 sentences):
+   Briefly assess how the identified risks and opportunities might affect potential returns.
 
-Recommended Next Steps:
-• [Step 1]
-• [Step 2]
-• [Step 3]
-• [Step 4]
-• [Step 5]
+Please keep each section concise and focused on information that directly impacts investment decisions and portfolio management.
 """
     return generate_claude_response(prompt)
 
