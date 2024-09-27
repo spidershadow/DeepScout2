@@ -127,35 +127,21 @@ Note: If information is not available for any category, use "Unknown" for the ri
         return f"Error: Unable to generate a valid risk assessment for {startup_name}. Please check the API response format."
 
 def generate_sector_info(sector: str) -> dict:
-    prompt = f'''Provide information about the {sector} sector in the following format:
-    Summary: [A brief summary of the sector]
-    Trends: [Latest trends relevant to startup opportunities]
-    Sub-sectors:
-    1. [Sub-sector name]: [Brief description]
-    2. [Sub-sector name]: [Brief description]
-    3. [Sub-sector name]: [Brief description]
-    4. [Sub-sector name]: [Brief description]
-    5. [Sub-sector name]: [Brief description]
-    '''
+    prompt = f"Provide a summary of the {sector} sector, provide the latest sector trends relevant to startup opportunites and list 5 sub-sectors with brief descriptions."
     response = generate_claude_response(prompt)
     
-    # Parse the response
-    parts = response.split('Sub-sectors:')
-    main_info = parts[0].strip().split('Trends:')
-    summary = main_info[0].replace('Summary:', '').strip()
-    trends = main_info[1].strip() if len(main_info) > 1 else ''
-    
+    # Parse the response to extract summary and sub-sectors
+    lines = response.split('\n')
+    summary = lines[0].strip()
     sub_sectors = {}
-    if len(parts) > 1:
-        sub_sector_lines = parts[1].strip().split('\n')
-        for line in sub_sector_lines:
-            if ':' in line:
-                name, description = line.split(':', 1)
-                sub_sectors[name.strip()] = description.strip()
+    
+    for line in lines[1:]:
+        if ':' in line:
+            sub_sector, description = line.split(':', 1)
+            sub_sectors[sub_sector.strip()] = description.strip()
     
     return {
         'summary': summary,
-        'trends': trends,
         'sub_sectors': sub_sectors
     }
 
@@ -178,68 +164,5 @@ Risk Assessment:
 {risk_assessment}
 
 Provide a summary in 3-4 sentences, highlighting key points for a GP to consider.
-"""
-    return generate_claude_response(prompt)
-
-def generate_startup_insights(startup, area):
-    prompt = f"""
-Analyze the following startup in the context of {area}:
-
-Startup Name: {startup['name']}
-Description: {startup.get('description', 'No description available')}
-Technology: {startup.get('technology', 'No technology information available')}
-
-Provide insights on the following aspects:
-1. Current Status: Briefly describe the startup's current position in relation to {area}.
-2. Challenges: Identify 2-3 key challenges the startup might face in this area.
-3. Opportunities: Highlight 2-3 potential opportunities for the startup in this area.
-4. Recommendations: Suggest 2-3 actionable steps for the startup to improve or capitalize on this area.
-
-Format the response as follows:
-Current Status: [1-2 sentences]
-
-Challenges:
-• [Challenge 1]
-• [Challenge 2]
-• [Challenge 3 (if applicable)]
-
-Opportunities:
-• [Opportunity 1]
-• [Opportunity 2]
-• [Opportunity 3 (if applicable)]
-
-Recommendations:
-1. [Recommendation 1]
-2. [Recommendation 2]
-3. [Recommendation 3 (if applicable)]
-"""
-    return generate_claude_response(prompt)
-
-def generate_portfolio_summary(analyzed_startups):
-    prompt = f"""
-Analyze the following portfolio of startups and provide a comprehensive summary for a General Partner:
-
-{json.dumps([{
-    'name': startup['name'],
-    'description': startup.get('description', 'No description available'),
-    'technology': startup.get('technology', 'No technology information available'),
-    'risk_score': startup.get('risk_score', 'N/A')
-} for startup in analyzed_startups], indent=2)}
-
-Provide a summary that includes:
-
-1. Portfolio Overview: A brief overview of the portfolio composition and diversity.
-
-2. Risk Profile: An analysis of the overall risk profile of the portfolio, including high-risk and low-risk investments.
-
-3. Technology Trends: Identify any common technological themes or trends across the portfolio.
-
-4. Potential Synergies: Highlight any potential synergies or complementary technologies among the startups.
-
-5. Areas of Concern: Identify any gaps or overexposure in certain areas that might need attention.
-
-6. Recommendations: Provide 3-4 strategic recommendations for portfolio management and future investments.
-
-Format the response in clear sections with bullet points where appropriate. Keep the total response to about 500-600 words.
 """
     return generate_claude_response(prompt)
