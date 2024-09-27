@@ -1,9 +1,8 @@
 import streamlit as st
-from claude_api import assess_tech_risk, generate_claude_response
+from claude_api import assess_tech_risk, generate_startup_insights, generate_portfolio_summary
 import logging
 import json
 from tenacity import retry, stop_after_attempt, wait_fixed
-
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -134,7 +133,6 @@ def run():
 
         # Display summary table
         st.table(summary_data)
-      
         
         # Display overall statistics
         valid_scores = [item['Risk Score'] for item in summary_data if item['Risk Score'] != "N/A"]
@@ -152,6 +150,37 @@ def run():
         with st.spinner("Generating insights and recommendations..."):
             gp_summary = generate_gp_summary_and_next_steps(summary_data, avg_risk_score)
             st.markdown(gp_summary)
+
+        # Deep Dive Analysis
+        st.subheader("Deep Dive Analysis")
+        
+        while True:
+            selected_startup = st.selectbox("Choose a startup for deep dive analysis:", 
+                                            [startup['name'] for startup in st.session_state.analyzed_startups])
+            
+            analysis_area = st.radio("Select an area to analyze:",
+                                     ["Regulatory Challenges", "Market Adoption Potential", "Competitive Landscape"])
+            
+            startup_info = next(startup for startup in st.session_state.analyzed_startups if startup['name'] == selected_startup)
+            insights = generate_startup_insights(startup_info, analysis_area)
+            
+            st.write(f"Insights for {selected_startup} - {analysis_area}:")
+            st.write(insights)
+            
+            action = st.radio("What would you like to do next?",
+                              ["Analyze another area for this startup",
+                               "Analyze a different startup",
+                               "End session and generate portfolio summary"])
+            
+            if action == "End session and generate portfolio summary":
+                break
+            elif action == "Analyze a different startup":
+                continue
+
+        # Portfolio Summary
+        st.subheader("Portfolio Summary")
+        summary = generate_portfolio_summary(st.session_state.analyzed_startups)
+        st.write(summary)
 
         st.success("Tech Risk Assessment completed. Review the summary and recommendations above for an overview of all assessed startups.")
 

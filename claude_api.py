@@ -180,3 +180,66 @@ Risk Assessment:
 Provide a summary in 3-4 sentences, highlighting key points for a GP to consider.
 """
     return generate_claude_response(prompt)
+
+def generate_startup_insights(startup, area):
+    prompt = f"""
+Analyze the following startup in the context of {area}:
+
+Startup Name: {startup['name']}
+Description: {startup.get('description', 'No description available')}
+Technology: {startup.get('technology', 'No technology information available')}
+
+Provide insights on the following aspects:
+1. Current Status: Briefly describe the startup's current position in relation to {area}.
+2. Challenges: Identify 2-3 key challenges the startup might face in this area.
+3. Opportunities: Highlight 2-3 potential opportunities for the startup in this area.
+4. Recommendations: Suggest 2-3 actionable steps for the startup to improve or capitalize on this area.
+
+Format the response as follows:
+Current Status: [1-2 sentences]
+
+Challenges:
+• [Challenge 1]
+• [Challenge 2]
+• [Challenge 3 (if applicable)]
+
+Opportunities:
+• [Opportunity 1]
+• [Opportunity 2]
+• [Opportunity 3 (if applicable)]
+
+Recommendations:
+1. [Recommendation 1]
+2. [Recommendation 2]
+3. [Recommendation 3 (if applicable)]
+"""
+    return generate_claude_response(prompt)
+
+def generate_portfolio_summary(analyzed_startups):
+    prompt = f"""
+Analyze the following portfolio of startups and provide a comprehensive summary for a General Partner:
+
+{json.dumps([{
+    'name': startup['name'],
+    'description': startup.get('description', 'No description available'),
+    'technology': startup.get('technology', 'No technology information available'),
+    'risk_score': startup.get('risk_score', 'N/A')
+} for startup in analyzed_startups], indent=2)}
+
+Provide a summary that includes:
+
+1. Portfolio Overview: A brief overview of the portfolio composition and diversity.
+
+2. Risk Profile: An analysis of the overall risk profile of the portfolio, including high-risk and low-risk investments.
+
+3. Technology Trends: Identify any common technological themes or trends across the portfolio.
+
+4. Potential Synergies: Highlight any potential synergies or complementary technologies among the startups.
+
+5. Areas of Concern: Identify any gaps or overexposure in certain areas that might need attention.
+
+6. Recommendations: Provide 3-4 strategic recommendations for portfolio management and future investments.
+
+Format the response in clear sections with bullet points where appropriate. Keep the total response to about 500-600 words.
+"""
+    return generate_claude_response(prompt)
