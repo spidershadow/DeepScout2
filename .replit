@@ -28,8 +28,8 @@ agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "streamlit run main.py --server.port 5000"
-waitForPort = 5000
+args = "streamlit run main.py --server.port 8501"
+waitForPort = 8501
 
 [[workflows.workflow]]
 name = "Check Streamlit"
@@ -43,9 +43,13 @@ task = "shell.exec"
 args = "pip show streamlit && echo '---' && streamlit hello --server.headless true --server.port 5000"
 
 [deployment]
-run = ["sh", "-c", "streamlit run main.py --server.port 5000"]
+run = ["sh", "-c", "streamlit run main.py --server.port 8501"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8501
+externalPort = 3000

@@ -45,21 +45,27 @@ def run(conn):
 
     if not st.session_state.sector_selected:
         st.subheader("Choose a DeepTech Sector")
-        for sector, description in sectors.items():
-            if st.button(f"{sector}", key=f"sector_{sector}"):
-                st.session_state.sector_selected = True
-                st.session_state.selected_sector = sector
-                with st.spinner("Generating sector information..."):
-                    try:
-                        logging.info(f"Generating sector information for {sector}")
-                        st.session_state.sector_info = generate_sector_info(sector)
-                        logging.info(f"Sector information generated successfully: {st.session_state.sector_info}")
-                    except Exception as e:
-                        logging.error(f"Error generating sector information: {str(e)}")
-                        st.error("An error occurred while generating sector information. Please try again.")
-                        reset_sector_selector()
-                st.rerun()
-            st.write(description)
+        
+        # Use columns to create a grid-like layout
+        col1, col2 = st.columns(2)
+        
+        for i, (sector, description) in enumerate(sectors.items()):
+            with col1 if i % 2 == 0 else col2:
+                st.write(f"**{sector}**")
+                st.write(description)
+                if st.button(f"Select {sector}", key=f"sector_{sector}"):
+                    st.session_state.sector_selected = True
+                    st.session_state.selected_sector = sector
+                    with st.spinner("Generating sector information..."):
+                        try:
+                            logging.info(f"Generating sector information for {sector}")
+                            st.session_state.sector_info = generate_sector_info(sector)
+                            logging.info(f"Sector information generated successfully: {st.session_state.sector_info}")
+                        except Exception as e:
+                            logging.error(f"Error generating sector information: {str(e)}")
+                            st.error("An error occurred while generating sector information. Please try again.")
+                            reset_sector_selector()
+                    st.rerun()
             st.write("---")
 
     if st.session_state.sector_selected:
@@ -70,10 +76,10 @@ def run(conn):
             sector_info = st.session_state.sector_info
             if sector_info:
                 st.write("Sector Summary:")
-                st.write(sector_info['summary'])
+                st.info(sector_info['summary'])
                 
                 st.write("Latest Sector Trends:")
-                st.write(sector_info['trends'])
+                st.success(sector_info['trends'])
                 
                 st.subheader("Sub-sectors")
                 for sub_sector, description in sector_info['sub_sectors'].items():
@@ -82,7 +88,7 @@ def run(conn):
 
                 selected_sub_sector = st.selectbox("Choose a sub-sector:", list(sector_info['sub_sectors'].keys()), key="sub_sector_select")
 
-                if st.button("Find Startups"):
+                if st.button("Find Startups", key="find_startups_button"):
                     st.session_state.selected_sub_sector = selected_sub_sector
                     st.session_state.show_startup_finder = True
                     st.session_state.current_stage = "Startup Finder"
@@ -96,7 +102,7 @@ def run(conn):
         with col2:
             st.write(" ")
             st.write(" ")
-            if st.button("Go back to Sector Selection"):
+            if st.button("Go back to Sector Selection", key="go_back_button"):
                 reset_sector_selector()
                 st.rerun()
 
