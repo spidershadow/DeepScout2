@@ -36,11 +36,31 @@ def run(conn):
     st.header("DeepScout: Sector Selector")
     
     sectors = {
-        "Artificial Intelligence": "AI technologies including machine learning, natural language processing, and computer vision.",
-        "Quantum Computing": "Development of quantum computers and quantum algorithms.",
-        "Biotechnology": "Application of biology and technology in medicine, agriculture, and industry.",
-        "Renewable Energy": "Clean energy technologies including solar, wind, and hydrogen power.",
-        "Nanotechnology": "Manipulation of matter on an atomic, molecular, and supramolecular scale."
+        "Artificial Intelligence": {
+            "description": "AI technologies including machine learning, natural language processing, and computer vision.",
+            "icon": "🧠",
+            "color": "#3498db"
+        },
+        "Quantum Computing": {
+            "description": "Development of quantum computers and quantum algorithms.",
+            "icon": "⚛️",
+            "color": "#9b59b6"
+        },
+        "Biotechnology": {
+            "description": "Application of biology and technology in medicine, agriculture, and industry.",
+            "icon": "🧬",
+            "color": "#2ecc71"
+        },
+        "Renewable Energy": {
+            "description": "Clean energy technologies including solar, wind, and hydrogen power.",
+            "icon": "🌞",
+            "color": "#f1c40f"
+        },
+        "Nanotechnology": {
+            "description": "Manipulation of matter on an atomic, molecular, and supramolecular scale.",
+            "icon": "🔬",
+            "color": "#e74c3c"
+        }
     }
 
     if not st.session_state.sector_selected:
@@ -49,10 +69,11 @@ def run(conn):
         # Use columns to create a grid-like layout
         col1, col2 = st.columns(2)
         
-        for i, (sector, description) in enumerate(sectors.items()):
+        for i, (sector, info) in enumerate(sectors.items()):
             with col1 if i % 2 == 0 else col2:
-                st.write(f"**{sector}**")
-                st.write(description)
+                st.markdown(f"<div style='background-color: {info['color']}; padding: 10px; border-radius: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+                st.markdown(f"### {info['icon']} {sector}")
+                st.write(info['description'])
                 if st.button(f"Select {sector}", key=f"sector_{sector}"):
                     st.session_state.sector_selected = True
                     st.session_state.selected_sector = sector
@@ -66,19 +87,19 @@ def run(conn):
                             st.error("An error occurred while generating sector information. Please try again.")
                             reset_sector_selector()
                     st.rerun()
-            st.write("---")
+                st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.sector_selected:
         col1, col2 = st.columns([3, 1])
         
         with col1:
-            st.subheader(f"{st.session_state.selected_sector} Overview")
+            st.subheader(f"{sectors[st.session_state.selected_sector]['icon']} {st.session_state.selected_sector} Overview")
             sector_info = st.session_state.sector_info
             if sector_info:
-                st.write("Sector Summary:")
+                st.markdown("### Sector Summary")
                 st.info(sector_info['summary'])
                 
-                st.write("Latest Sector Trends:")
+                st.markdown("### Latest Sector Trends")
                 st.success(sector_info['trends'])
                 
                 st.subheader("Sub-sectors")
