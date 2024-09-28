@@ -33,7 +33,7 @@ def reset_sector_selector():
 def run(conn):
     initialize_session_state()
 
-    st.header("Sector Selector")
+    st.header("DeepScout: Sector Selector")
     
     sectors = {
         "Artificial Intelligence": "AI technologies including machine learning, natural language processing, and computer vision.",
