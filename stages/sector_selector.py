@@ -71,9 +71,12 @@ def run(conn):
         
         for i, (sector, info) in enumerate(sectors.items()):
             with col1 if i % 2 == 0 else col2:
-                st.markdown(f"<div style='background-color: {info['color']}; padding: 10px; border-radius: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
-                st.markdown(f"### {info['icon']} {sector}")
-                st.write(info['description'])
+                st.markdown(f"""
+                <div style='background-color: {info['color']}; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+                    <h3 style='color: white;'>{info['icon']} {sector}</h3>
+                    <p style='color: white;'>{info['description']}</p>
+                </div>
+                """, unsafe_allow_html=True)
                 if st.button(f"Select {sector}", key=f"sector_{sector}"):
                     st.session_state.sector_selected = True
                     st.session_state.selected_sector = sector
@@ -86,8 +89,7 @@ def run(conn):
                             logging.error(f"Error generating sector information: {str(e)}")
                             st.error("An error occurred while generating sector information. Please try again.")
                             reset_sector_selector()
-                    st.rerun()
-                st.markdown("</div>", unsafe_allow_html=True)
+                    st.experimental_rerun()
 
     if st.session_state.sector_selected:
         col1, col2 = st.columns([3, 1])
@@ -125,7 +127,7 @@ def run(conn):
             st.write(" ")
             if st.button("Go back to Sector Selection", key="go_back_button"):
                 reset_sector_selector()
-                st.rerun()
+                st.experimental_rerun()
 
     if st.session_state.show_startup_finder:
         startup_finder.run(conn)
