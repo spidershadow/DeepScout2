@@ -2,8 +2,13 @@ import streamlit as st
 from perplexity_api import generate_startup_list, check_perplexity_api_key
 import logging
 from stages import tech_risk_assessor
+from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+def generate_startup_list_with_retry(sector, sub_sector):
+    return generate_startup_list(sector, sub_sector)
 
 def run(conn):
     st.header("Startup Finder")
@@ -36,16 +41,22 @@ def run(conn):
     if "startups" not in st.session_state:
         with st.spinner("Generating startup list..."):
             try:
-                st.session_state.startups = generate_startup_list(st.session_state.selected_sector, st.session_state.selected_sub_sector)
+                st.session_state.startups = generate_startup_list_with_retry(st.session_state.selected_sector, st.session_state.selected_sub_sector)
                 if not st.session_state.startups:
                     st.error("No startups were found. Please try again or choose a different sector/sub-sector.")
                     return
                 logging.info(f"Generated {len(st.session_state.startups)} startups")
-            except Exception as e:
+            except RetryError as e:
                 st.error(f"An error occurred while generating the startup list: {str(e)}")
                 logging.error(f"Error in startup generation: {str(e)}")
                 if st.button("Retry Startup Generation"):
-                    st.experimental_rerun()
+                    if 'startups' in st.session_state:
+                        del st.session_state.startups
+                    st.rerun()
+                return
+            except Exception as e:
+                st.error(f"An unexpected error occurred: {str(e)}")
+                logging.error(f"Unexpected error in startup generation: {str(e)}")
                 return
 
     # Display startups
@@ -57,7 +68,6 @@ def run(conn):
             st.write(f"Description: {startup.get('description', 'No description available')}")
             st.write(f"Funding: {startup.get('funding', 'N/A')}")
             st.write(f"Technology: {startup.get('technology', 'No technology information available')}")
-
 
     # Allow startup selection
     selected_startups = st.multiselect(
@@ -97,4 +107,4 @@ def run(conn):
     # Reset button
     if st.button("Reset Startup Selection"):
         st.session_state.reset_startup_finder = True
-        st.experimental_rerun()
+        st.rerun()
